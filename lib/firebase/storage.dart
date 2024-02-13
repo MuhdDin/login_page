@@ -27,9 +27,12 @@ class StoreFirebase {
     try {
       debugPrint('storing');
       final uploadTask = imageref.putData(imagePath);
+      debugPrint('still storing');
       final TaskSnapshot taskSnapshot =
           await uploadTask.whenComplete(() => null);
+      debugPrint('still storing2');
       final String downloadURL = await taskSnapshot.ref.getDownloadURL();
+      debugPrint('done1');
       return downloadURL;
     } catch (e) {
       debugPrint('error uploading image');
@@ -869,57 +872,20 @@ class StoreFirebase {
 ////CHAT FUNCTION////
 ////////////////////////////
 
-  // Future<void> storeChat(
-  //     String ownerId, String friendId, String message) async {
-  //   Chat sender = Chat(
-  //       friendUid: friendId,
-  //       messageType: 'sender',
-  //       createdAt: DateTime.now(),
-  //       message: message);
-  //   Chat receiver = Chat(
-  //       friendUid: ownerId,
-  //       messageType: 'receive',
-  //       createdAt: DateTime.now(),
-  //       message: message);
-  //   QuerySnapshot userSnapshot = await _firestore
-  //       .collection('user')
-  //       .where('uid', isEqualTo: ownerId)
-  //       .get();
-  //   QuerySnapshot friendSnapshot = await _firestore
-  //       .collection('user')
-  //       .where('uid', isEqualTo: friendId)
-  //       .get();
-
-  //   if (userSnapshot.docs.isNotEmpty && friendSnapshot.docs.isNotEmpty) {
-  //     String chatId = _generateChatId(ownerId, friendId);
-  //     DocumentReference chatDocument = userSnapshot.docs.first.reference;
-  //     DocumentReference chatDocument2 = friendSnapshot.docs.first.reference;
-  //     CollectionReference subCollection = chatDocument.collection('chats');
-  //     CollectionReference subCollection2 = chatDocument2.collection('chats');
-  //     await subCollection.add({'uid': friendId});
-  //     await subCollection2.add({'uid': ownerId});
-  //     CollectionReference messagesSubCollection =
-  //         subCollection.doc().collection('messages');
-  //     CollectionReference messagesSubCollection2 =
-  //         subCollection2.doc().collection('messages');
-
-  //     await messagesSubCollection.add(sender.toMap());
-  //     await messagesSubCollection2.add(receiver.toMap());
-  //   }
-  // }
-
   Future<void> storeChat(
       String ownerId, String friendId, String message) async {
     Chat sender = Chat(
         friendUid: friendId,
         messageType: 'sender',
         createdAt: DateTime.now(),
-        message: message);
+        message: message,
+        read: true);
     Chat receiver = Chat(
         friendUid: ownerId,
         messageType: 'receive',
         createdAt: DateTime.now(),
-        message: message);
+        message: message,
+        read: false);
 
     try {
       // Generate a unique chat ID based on user IDs
@@ -999,31 +965,116 @@ class StoreFirebase {
     }
   }
 
-  Future<List<String>> chatHistory(String ownerId) async {
+  // Future<List<String>> chatHistory(String ownerId) async {
+  //   try {
+  //     print('hi, $ownerId');
+  //     List<String> recentChats = [];
+  //     QuerySnapshot userSnapshot = await _firestore
+  //         .collection('user')
+  //         .where('uid', isEqualTo: ownerId)
+  //         .get();
+  //     if (userSnapshot.docs.isNotEmpty) {
+  //       print('hi2');
+  //       DocumentReference chatDocument = userSnapshot.docs.first.reference;
+  //       CollectionReference chatReference = chatDocument.collection('chats');
+  //       QuerySnapshot messageSnapshot = await chatReference.get();
+  //       print('hiiiiii, ${messageSnapshot.docs}');
+  //       for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
+  //         print('hiiiiii2');
+  //         String docName = documentSnapshot.id;
+  //         print('mesageData, $docName');
+
+  //         recentChats.add(docName);
+  //       }
+  //     }
+  //     return recentChats;
+  //   } catch (e) {
+  //     return [];
+  //   }
+  // }
+  Future<Map<String, int>> chatHistory(String ownerId) async {
     try {
-      print('hi, $ownerId');
-      List<String> recentChats = [];
+      Map<String, int> unreadMessageCounts = {};
+
       QuerySnapshot userSnapshot = await _firestore
           .collection('user')
           .where('uid', isEqualTo: ownerId)
           .get();
       if (userSnapshot.docs.isNotEmpty) {
-        print('hi2');
         DocumentReference chatDocument = userSnapshot.docs.first.reference;
         CollectionReference chatReference = chatDocument.collection('chats');
         QuerySnapshot messageSnapshot = await chatReference.get();
-        print('hiiiiii, ${messageSnapshot.docs}');
-        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
-          print('hiiiiii2');
-          String docName = documentSnapshot.id;
-          print('mesageData, $docName');
 
-          recentChats.add(docName);
+        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
+          String chatId = documentSnapshot.id;
+          CollectionReference messageReference =
+              documentSnapshot.reference.collection('messages');
+
+          QuerySnapshot unreadMessageSnapshot =
+              await messageReference.where('read', isEqualTo: false).get();
+
+          unreadMessageCounts[chatId] = unreadMessageSnapshot.size;
         }
       }
-      return recentChats;
+
+      return unreadMessageCounts;
     } catch (e) {
-      return [];
+      print('Error fetching chat history: $e');
+      return {};
+    }
+  }
+
+  Future<int> totalUnreadMessage(String ownerId) async {
+    try {
+      int unreadMessageCount = 0;
+      QuerySnapshot userSnapshot = await _firestore
+          .collection('user')
+          .where('uid', isEqualTo: ownerId)
+          .get();
+      if (userSnapshot.docs.isNotEmpty) {
+        DocumentReference chatDocument = userSnapshot.docs.first.reference;
+        CollectionReference chatReference = chatDocument.collection('chats');
+        QuerySnapshot messageSnapshot = await chatReference.get();
+
+        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
+          CollectionReference messageReference =
+              documentSnapshot.reference.collection('messages');
+
+          QuerySnapshot unreadMessageSnapshot =
+              await messageReference.where('read', isEqualTo: false).get();
+          unreadMessageCount += unreadMessageSnapshot.size;
+        }
+      }
+      return unreadMessageCount;
+    } catch (e) {
+      debugPrint("error read message: $e");
+      return 0;
+    }
+  }
+
+  Future<void> readMessage(String ownerId, String friendId) async {
+    try {
+      QuerySnapshot userSnapshot = await _firestore
+          .collection('user')
+          .where('uid', isEqualTo: ownerId)
+          .get();
+      if (userSnapshot.docs.isNotEmpty) {
+        DocumentReference chatDocument = userSnapshot.docs.first.reference;
+        CollectionReference chatReference = chatDocument
+            .collection('chats')
+            .doc(friendId)
+            .collection('messages');
+        QuerySnapshot messageSnapshot =
+            await chatReference.where('read', isEqualTo: false).get();
+
+        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
+          print("reference: ${documentSnapshot.reference}");
+          DocumentReference docRef = documentSnapshot.reference;
+          await docRef.update({'read': true});
+        }
+      }
+    } catch (e) {
+      debugPrint("error read message: $e");
     }
   }
 }

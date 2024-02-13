@@ -865,6 +865,49 @@ class StoreFirebase {
     }
   }
 
+/////////////////////////////
+////CHAT FUNCTION////
+////////////////////////////
+
+  // Future<void> storeChat(
+  //     String ownerId, String friendId, String message) async {
+  //   Chat sender = Chat(
+  //       friendUid: friendId,
+  //       messageType: 'sender',
+  //       createdAt: DateTime.now(),
+  //       message: message);
+  //   Chat receiver = Chat(
+  //       friendUid: ownerId,
+  //       messageType: 'receive',
+  //       createdAt: DateTime.now(),
+  //       message: message);
+  //   QuerySnapshot userSnapshot = await _firestore
+  //       .collection('user')
+  //       .where('uid', isEqualTo: ownerId)
+  //       .get();
+  //   QuerySnapshot friendSnapshot = await _firestore
+  //       .collection('user')
+  //       .where('uid', isEqualTo: friendId)
+  //       .get();
+
+  //   if (userSnapshot.docs.isNotEmpty && friendSnapshot.docs.isNotEmpty) {
+  //     String chatId = _generateChatId(ownerId, friendId);
+  //     DocumentReference chatDocument = userSnapshot.docs.first.reference;
+  //     DocumentReference chatDocument2 = friendSnapshot.docs.first.reference;
+  //     CollectionReference subCollection = chatDocument.collection('chats');
+  //     CollectionReference subCollection2 = chatDocument2.collection('chats');
+  //     await subCollection.add({'uid': friendId});
+  //     await subCollection2.add({'uid': ownerId});
+  //     CollectionReference messagesSubCollection =
+  //         subCollection.doc().collection('messages');
+  //     CollectionReference messagesSubCollection2 =
+  //         subCollection2.doc().collection('messages');
+
+  //     await messagesSubCollection.add(sender.toMap());
+  //     await messagesSubCollection2.add(receiver.toMap());
+  //   }
+  // }
+
   Future<void> storeChat(
       String ownerId, String friendId, String message) async {
     Chat sender = Chat(
@@ -877,29 +920,54 @@ class StoreFirebase {
         messageType: 'receive',
         createdAt: DateTime.now(),
         message: message);
-    QuerySnapshot userSnapshot = await _firestore
-        .collection('user')
-        .where('uid', isEqualTo: ownerId)
-        .get();
-    QuerySnapshot friendSnapshot = await _firestore
-        .collection('user')
-        .where('uid', isEqualTo: friendId)
-        .get();
 
-    if (userSnapshot.docs.isNotEmpty && friendSnapshot.docs.isNotEmpty) {
-      DocumentReference chatDocument = userSnapshot.docs.first.reference;
-      DocumentReference chatDocument2 = friendSnapshot.docs.first.reference;
-      CollectionReference subCollection = chatDocument.collection('chats');
-      CollectionReference subCollection2 = chatDocument2.collection('chats');
-      CollectionReference messagesSubCollection =
-          subCollection.doc(friendId).collection('messages');
-      CollectionReference messagesSubCollection2 =
-          subCollection2.doc(ownerId).collection('messages');
+    try {
+      // Generate a unique chat ID based on user IDs
 
-      await messagesSubCollection.add(sender.toMap());
-      await messagesSubCollection2.add(receiver.toMap());
+      // Reference to the chat document for each user
+      DocumentReference userDocRef = await _firestore
+          .collection('user')
+          .where('uid', isEqualTo: ownerId)
+          .get()
+          .then((querySnapshot) {
+        if (querySnapshot.docs.isNotEmpty) {
+          return querySnapshot.docs.first.reference;
+        }
+        throw 'User document not found for ownerId: $ownerId';
+      });
+      DocumentReference friendDocRef = await _firestore
+          .collection('user')
+          .where('uid', isEqualTo: friendId)
+          .get()
+          .then((querySnapshot) {
+        if (querySnapshot.docs.isNotEmpty) {
+          return querySnapshot.docs.first.reference;
+        }
+        throw 'User document not found for friendId: $friendId';
+      });
+
+      // Reference to the chat collection under each user's document
+      CollectionReference userChatRef = userDocRef.collection('chats');
+      CollectionReference friendChatRef = friendDocRef.collection('chats');
+
+      // Add UID field to the chat document for each user
+      await userChatRef.doc(friendId).set({'uid': friendId});
+      await friendChatRef.doc(ownerId).set({'uid': ownerId});
+
+      // Add sender and receiver messages to the messages subcollection
+      CollectionReference userMessagesRef =
+          userChatRef.doc(friendId).collection('messages');
+      CollectionReference friendMessagesRef =
+          friendChatRef.doc(ownerId).collection('messages');
+      await userMessagesRef.add(sender.toMap());
+      await friendMessagesRef.add(receiver.toMap());
+    } catch (e) {
+      print('Error storing chat: $e');
+      throw e; // Rethrow the error for handling in the calling code
     }
   }
+
+// Function to generate a unique chat ID based on user IDs
 
   Future<List<Chat>> fetchChat(String ownerId, String friendId) async {
     try {
@@ -926,6 +994,34 @@ class StoreFirebase {
         }
       }
       return messages;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<String>> chatHistory(String ownerId) async {
+    try {
+      print('hi, $ownerId');
+      List<String> recentChats = [];
+      QuerySnapshot userSnapshot = await _firestore
+          .collection('user')
+          .where('uid', isEqualTo: ownerId)
+          .get();
+      if (userSnapshot.docs.isNotEmpty) {
+        print('hi2');
+        DocumentReference chatDocument = userSnapshot.docs.first.reference;
+        CollectionReference chatReference = chatDocument.collection('chats');
+        QuerySnapshot messageSnapshot = await chatReference.get();
+        print('hiiiiii, ${messageSnapshot.docs}');
+        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
+          print('hiiiiii2');
+          String docName = documentSnapshot.id;
+          print('mesageData, $docName');
+
+          recentChats.add(docName);
+        }
+      }
+      return recentChats;
     } catch (e) {
       return [];
     }

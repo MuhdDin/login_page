@@ -8,9 +8,10 @@ import 'package:login_page/model/follow.dart';
 import 'package:login_page/model/user.dart';
 import 'package:login_page/provider/search_provider.dart';
 import 'package:login_page/provider/uid_provider.dart';
-import 'package:login_page/provider/username_provider.dart';
 import 'package:login_page/widget/appstyle.dart';
 import 'package:login_page/widget/custom_text.dart';
+
+final isSearchingProvider = StateProvider<bool>((ref) => false);
 
 class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({super.key});
@@ -22,9 +23,11 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatRoomState extends ConsumerState<ChatPage> {
   TextEditingController search = TextEditingController();
   List<FollowingUser> accounts = [];
+  bool isSearching = false;
 
   @override
   Widget build(BuildContext context) {
+    final isSearching = ref.watch(isSearchingProvider);
     return Scaffold(
       body: SafeArea(
           child: Center(
@@ -32,7 +35,9 @@ class _ChatRoomState extends ConsumerState<ChatPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             searchFilter(),
-            searchResult(),
+            isSearching
+                ? searchResult()
+                : showRecent(), // Conditionally display widgets
           ],
         ),
       )),
@@ -41,21 +46,95 @@ class _ChatRoomState extends ConsumerState<ChatPage> {
 
   Widget searchFilter() {
     String uid = ref.watch(uidStateProvider);
+
     return CustomTextField(
-        controller: search,
-        onChanged: (value) async {
-          accounts = await StoreFirebase().filterChatAccount(value, uid);
-          ref.read(searchNotifierProvider.notifier).triggerRebuild();
-          print('hi, ${accounts.length}');
+      controller: search,
+      onChanged: (value) async {
+        ref.read(isSearchingProvider.notifier).state = value.isNotEmpty;
+        accounts = await StoreFirebase().filterChatAccount(value, uid);
+        ref.read(searchNotifierProvider.notifier).triggerRebuild();
+        print('hi, ${accounts.length}');
+      },
+      suffixIcon: const Icon(Icons.search),
+      hintText: 'search name',
+      obscureText: false,
+      color: AppConst.kGreyLight,
+    );
+  }
+
+  Widget showRecent() {
+    String uid = ref.watch(uidStateProvider);
+    print('history');
+    return Expanded(
+      child: FutureBuilder(
+        future: StoreFirebase().chatHistory(uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            List<String> data = snapshot.data!;
+            print("test: ${data.length}");
+            return ListView.builder(
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                return FutureBuilder(
+                  future: StoreFirebase().fetchUserDatabyUid(data[index]),
+                  builder: (context, snapshot2) {
+                    UserInfoOri? userInfo = snapshot2.data;
+                    if (snapshot2.connectionState == ConnectionState.done) {
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 15.0.w, vertical: 10.h),
+                            child: GestureDetector(
+                              onTap: () {
+                                if (context.mounted) {
+                                  Navigator.of(context, rootNavigator: true)
+                                      .push(
+                                    MaterialPageRoute(
+                                      builder: (BuildContext context) {
+                                        return ChatRoom(
+                                          profilePicture:
+                                              userInfo.profilePicture!,
+                                          friendName: userInfo.userName,
+                                          friendUid: userInfo.uid!,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                }
+                              },
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      NetworkImage(userInfo!.profilePicture!),
+                                ),
+                                title: Text(
+                                  userInfo.userName,
+                                  style: appstyle(
+                                      15.w, AppConst.kLight, FontWeight.w400),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Divider(),
+                        ],
+                      );
+                    } else {
+                      return Container();
+                    }
+                  },
+                );
+              },
+            );
+          } else {
+            return Container();
+          }
         },
-        suffixIcon: const Icon(Icons.search),
-        hintText: 'search name',
-        obscureText: false,
-        color: AppConst.kGreyLight);
+      ),
+    );
   }
 
   Widget searchResult() {
-    String ownerName = ref.watch(usernameStateProvider);
     print('result');
     return Expanded(
       child: Consumer(builder: (context, ref, child) {
@@ -76,15 +155,6 @@ class _ChatRoomState extends ConsumerState<ChatPage> {
                           padding: EdgeInsets.symmetric(vertical: 10.0.h),
                           child: GestureDetector(
                             onTap: () {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => ChatRoom(
-                              //       profilePicture: data.profilePicture!,
-                              //       friendName: data.userName,
-                              //     ),
-                              //   ),
-                              // );
                               if (context.mounted) {
                                 Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(

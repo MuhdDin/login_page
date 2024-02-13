@@ -226,7 +226,8 @@ class _ChatRoomState extends ConsumerState<ChatRoom> {
                       friendUid: widget.friendUid,
                       messageType: 'sender',
                       createdAt: DateTime.now(),
-                      message: message);
+                      message: message,
+                      read: false);
                   toggle = true;
                   ref
                       .read(chatNotifierProvider.notifier)

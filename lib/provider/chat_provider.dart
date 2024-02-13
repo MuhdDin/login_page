@@ -11,7 +11,8 @@ class ChatNotifier extends StateNotifier<Chat> {
             friendUid: '',
             messageType: '',
             createdAt: DateTime.now(),
-            message: ''));
+            message: '',
+            read: false));
 
   void updateChat(Chat newState) {
     state = newState;

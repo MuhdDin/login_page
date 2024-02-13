@@ -5,19 +5,23 @@ class Chat {
   final String messageType;
   final DateTime createdAt;
   final String message;
+  final bool read;
 
-  Chat(
-      {required this.friendUid,
-      required this.messageType,
-      required this.createdAt,
-      required this.message});
+  Chat({
+    required this.friendUid,
+    required this.messageType,
+    required this.createdAt,
+    required this.message,
+    required this.read,
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'friendUid': friendUid,
       'createdAt': createdAt,
       'messageType': messageType,
-      'message': message
+      'message': message,
+      'read': read
     };
   }
 
@@ -26,6 +30,7 @@ class Chat {
         friendUid: map['friendUid'],
         messageType: map['messageType'],
         createdAt: (map['createdAt'] as Timestamp).toDate(),
-        message: map['message']);
+        message: map['message'],
+        read: map['read']);
   }
 }

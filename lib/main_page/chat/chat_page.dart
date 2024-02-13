@@ -6,6 +6,7 @@ import 'package:login_page/firebase/storage.dart';
 import 'package:login_page/main_page/chat/chat_room.dart';
 import 'package:login_page/model/follow.dart';
 import 'package:login_page/model/user.dart';
+import 'package:login_page/provider/read_message_provider.dart';
 import 'package:login_page/provider/search_provider.dart';
 import 'package:login_page/provider/uid_provider.dart';
 import 'package:login_page/widget/appstyle.dart';
@@ -66,71 +67,99 @@ class _ChatRoomState extends ConsumerState<ChatPage> {
     String uid = ref.watch(uidStateProvider);
     print('history');
     return Expanded(
-      child: FutureBuilder(
-        future: StoreFirebase().chatHistory(uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            List<String> data = snapshot.data!;
-            print("test: ${data.length}");
-            return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                return FutureBuilder(
-                  future: StoreFirebase().fetchUserDatabyUid(data[index]),
-                  builder: (context, snapshot2) {
-                    UserInfoOri? userInfo = snapshot2.data;
-                    if (snapshot2.connectionState == ConnectionState.done) {
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 15.0.w, vertical: 10.h),
-                            child: GestureDetector(
-                              onTap: () {
-                                if (context.mounted) {
-                                  Navigator.of(context, rootNavigator: true)
-                                      .push(
-                                    MaterialPageRoute(
-                                      builder: (BuildContext context) {
-                                        return ChatRoom(
-                                          profilePicture:
-                                              userInfo.profilePicture!,
-                                          friendName: userInfo.userName,
-                                          friendUid: userInfo.uid!,
-                                        );
-                                      },
+      child: Consumer(builder: (context, ref, child) {
+        ref.watch(readMessageProvider);
+        return FutureBuilder(
+          future: StoreFirebase().chatHistory(uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              Map<String, int> data = snapshot.data!;
+              print("test: ${data.length}");
+              return ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  String chatId = data.keys.elementAt(index);
+                  int unreadCount = data.values.elementAt(index);
+                  print("$chatId: $unreadCount");
+                  return FutureBuilder(
+                    future: StoreFirebase().fetchUserDatabyUid(chatId),
+                    builder: (context, snapshot2) {
+                      UserInfoOri? userInfo = snapshot2.data;
+                      if (snapshot2.connectionState == ConnectionState.done) {
+                        return Container(
+                          color: unreadCount > 0
+                              ? const Color.fromARGB(255, 48, 48, 48)
+                              : Colors.transparent,
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15.0.w, vertical: 10.h),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    if (context.mounted) {
+                                      Navigator.of(context, rootNavigator: true)
+                                          .push(
+                                        MaterialPageRoute(
+                                          builder: (BuildContext context) {
+                                            return ChatRoom(
+                                              profilePicture:
+                                                  userInfo.profilePicture!,
+                                              friendName: userInfo.userName,
+                                              friendUid: userInfo.uid!,
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    }
+                                    await StoreFirebase()
+                                        .readMessage(uid, chatId);
+                                    ref
+                                        .read(readMessageProvider.notifier)
+                                        .triggerRebuild();
+                                  },
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage: NetworkImage(
+                                          userInfo!.profilePicture!),
                                     ),
-                                  );
-                                }
-                              },
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage:
-                                      NetworkImage(userInfo!.profilePicture!),
-                                ),
-                                title: Text(
-                                  userInfo.userName,
-                                  style: appstyle(
-                                      15.w, AppConst.kLight, FontWeight.w400),
+                                    title: Text(
+                                      userInfo.userName,
+                                      style: appstyle(
+                                          15.w,
+                                          AppConst.kLight,
+                                          unreadCount > 0
+                                              ? FontWeight.bold
+                                              : FontWeight.w400),
+                                    ),
+                                    trailing: unreadCount > 0
+                                        ? Text(
+                                            unreadCount.toString(),
+                                            style: appstyle(
+                                                15.w,
+                                                AppConst.kLight,
+                                                FontWeight.bold),
+                                          )
+                                        : null,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          const Divider(),
-                        ],
-                      );
-                    } else {
-                      return Container();
-                    }
-                  },
-                );
-              },
-            );
-          } else {
-            return Container();
-          }
-        },
-      ),
+                        );
+                      } else {
+                        return Container();
+                      }
+                    },
+                  );
+                },
+              );
+            } else {
+              return Container();
+            }
+          },
+        );
+      }),
     );
   }
 

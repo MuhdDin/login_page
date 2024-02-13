@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:login_page/constant/constants.dart';
 import 'package:login_page/firebase/storage.dart';
+import 'package:login_page/model/calculate_day.dart';
 import 'package:login_page/model/chat.dart';
 import 'package:login_page/provider/chat_provider.dart';
 import 'package:login_page/provider/uid_provider.dart';
@@ -159,6 +160,21 @@ class _ChatRoomState extends ConsumerState<ChatRoom> {
                                 messages[index].message,
                                 style: const TextStyle(fontSize: 15),
                               ),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: (messages[index].messageType == "receive"
+                              ? Alignment.topLeft
+                              : Alignment.topRight),
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                left: 14.0.w, right: 14.0.w, bottom: 5.h),
+                            child: Text(
+                              calculateDaysDifference(
+                                  messages[index].createdAt.toString()),
+                              style: appstyle(
+                                  12.w, AppConst.kGreyLight, FontWeight.w200),
                             ),
                           ),
                         ),

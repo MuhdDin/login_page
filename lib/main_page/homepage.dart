@@ -10,9 +10,12 @@ import 'package:login_page/constant/constants.dart';
 import 'package:login_page/firebase/storage.dart';
 import 'package:login_page/main_page/chat/chat_page.dart';
 import 'package:login_page/model/user.dart';
+import 'package:login_page/provider/read_message_provider.dart';
 import 'package:login_page/provider/rebuild_notifier.dart';
+import 'package:login_page/provider/uid_provider.dart';
 import 'package:login_page/provider/username_provider.dart';
 import 'package:login_page/user/user_page.dart';
+import 'package:login_page/widget/appstyle.dart';
 import 'package:login_page/widget/height_spacer.dart';
 import 'package:login_page/widget/show_post.dart';
 import 'package:shimmer/shimmer.dart';
@@ -55,6 +58,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    String uid = ref.watch(uidStateProvider);
     ref.watch(rebuildNotifierProvider);
     return FutureBuilder(
         future: Future.delayed(
@@ -70,16 +74,59 @@ class _HomePageState extends ConsumerState<HomePage> {
                 centerTitle: false,
                 title: Text('My project', style: GoogleFonts.pacifico()),
                 actions: [
-                  IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: ((context) => const ChatPage()),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.chat))
+                  Stack(
+                    children: [
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: ((context) => const ChatPage()),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.chat)),
+                      Consumer(builder: (context, ref, child) {
+                        ref.watch(readMessageProvider);
+                        return FutureBuilder(
+                            future: StoreFirebase().totalUnreadMessage(uid),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.done) {
+                                int data = snapshot.data!;
+                                return Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(AppConst.kRadius),
+                                        ),
+                                        color: data > 0
+                                            ? AppConst.kRed
+                                            : Colors.transparent),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 2.0.w, horizontal: 3.w),
+                                      child: data > 0
+                                          ? Text(
+                                              data.toString(),
+                                              style: appstyle(
+                                                  12.w,
+                                                  AppConst.kLight,
+                                                  FontWeight.w600),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Container();
+                              }
+                            });
+                      }),
+                    ],
+                  )
                 ],
               ),
               body: SafeArea(

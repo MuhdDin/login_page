@@ -1,26 +1,29 @@
 class NotificationModel {
   final String type;
   final DateTime createdAt;
-  final String postId;
+  String? postId;
   final String uid;
   final String description;
 
   NotificationModel({
     required this.type,
     required this.createdAt,
-    required this.postId,
+    this.postId,
     required this.uid,
     required this.description,
   });
 
   Map<String, dynamic> toMap() {
-    return {
+    Map<String, dynamic> map = {
       'type': type,
       'createdAt': createdAt,
-      'postId': postId,
       'uid': uid,
       'description': description,
     };
+    if (postId != null) {
+      map['postId'] = postId;
+    }
+    return map;
   }
 
   factory NotificationModel.fromMap(Map<String, dynamic> map) {

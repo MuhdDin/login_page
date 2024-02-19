@@ -691,7 +691,6 @@ class StoreFirebase {
           .collection('user')
           .where('uid', isEqualTo: ownerId)
           .get();
-      print("following: $ownerId");
       QuerySnapshot followerSnapshot = await _firestore
           .collection('user')
           .where('uid', isEqualTo: followedId)

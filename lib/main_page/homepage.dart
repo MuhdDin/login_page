@@ -86,45 +86,65 @@ class _HomePageState extends ConsumerState<HomePage> {
                             );
                           },
                           icon: const Icon(Icons.chat)),
-                      Consumer(builder: (context, ref, child) {
-                        ref.watch(readMessageProvider);
-                        return FutureBuilder(
-                            future: StoreFirebase().totalUnreadMessage(uid),
+                      Consumer(
+                        builder: (context, ref, child) {
+                          ref.watch(readMessageProvider);
+                          return StreamBuilder<UserInfoOri>(
+                            stream: StoreFirebase().streamUserDataByUid(uid),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
-                                  ConnectionState.done) {
-                                int data = snapshot.data!;
-                                return Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(AppConst.kRadius),
-                                        ),
-                                        color: data > 0
+                                  ConnectionState.waiting) {
+                                // Show a loading indicator while waiting for data
+                                return CircularProgressIndicator();
+                              } else if (snapshot.connectionState ==
+                                  ConnectionState.active) {
+                                // When data is actively being received
+                                if (snapshot.hasData) {
+                                  // If data is available
+                                  UserInfoOri data = snapshot.data!;
+                                  return Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                            AppConst.kRadius),
+                                        color: data.unreadMessage! > 0
                                             ? AppConst.kRed
-                                            : Colors.transparent),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 2.0.w, horizontal: 3.w),
-                                      child: data > 0
-                                          ? Text(
-                                              data.toString(),
-                                              style: appstyle(
-                                                  12.w,
-                                                  AppConst.kLight,
-                                                  FontWeight.w600),
-                                            )
-                                          : null,
+                                            : Colors.transparent,
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 2.0.w, horizontal: 3.w),
+                                        child: data.unreadMessage! > 0
+                                            ? Text(
+                                                data.unreadMessage.toString(),
+                                                style: appstyle(
+                                                    12.w,
+                                                    AppConst.kLight,
+                                                    FontWeight.w600),
+                                              )
+                                            : null,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                } else {
+                                  // If no data is available
+                                  return Text('No data available');
+                                }
+                              } else if (snapshot.connectionState ==
+                                  ConnectionState.done) {
+                                // If the stream has emitted all its data
+                                return Text('Stream completed');
                               } else {
-                                return Container();
+                                // Handle other connection states
+                                return Text(
+                                    'Connection state: ${snapshot.connectionState}');
                               }
-                            });
-                      }),
+                            },
+                          );
+                        },
+                      ),
                     ],
                   )
                 ],

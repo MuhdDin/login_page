@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart'
+    as inset_box_shadow;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:login_page/constant/constants.dart';
@@ -7,6 +9,7 @@ import 'package:login_page/firebase/auth.dart';
 import 'package:login_page/firebase/storage.dart';
 import 'package:login_page/login_page/pages/login.dart';
 import 'package:login_page/model/follow.dart';
+import 'package:login_page/model/notification.dart';
 import 'package:login_page/model/posts.dart';
 import 'package:login_page/model/user.dart';
 import 'package:login_page/provider/click_provider.dart';
@@ -55,6 +58,7 @@ class _UserPageState extends ConsumerState<UserPage>
   Widget build(BuildContext context) {
     name = ref.watch(usernameStateProvider);
     String truename = widget.role == 0 ? name : widget.userName;
+    print("truename: $name");
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -68,26 +72,28 @@ class _UserPageState extends ConsumerState<UserPage>
           ),
         ),
         actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 8.0.w),
-            child: GestureDetector(
-              onTap: () async {
-                await Authentication().signOut();
-                if (context.mounted) {
-                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                    builder: (BuildContext context) {
-                      return const LoginPage();
+          widget.role == 0
+              ? Padding(
+                  padding: EdgeInsets.only(right: 8.0.w),
+                  child: GestureDetector(
+                    onTap: () async {
+                      await Authentication().signOut();
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true)
+                            .pushAndRemoveUntil(MaterialPageRoute(
+                          builder: (BuildContext context) {
+                            return const LoginPage();
+                          },
+                        ), (route) => false);
+                      }
                     },
-                  ), (route) => false);
-                }
-              },
-              child: const Icon(
-                Icons.logout,
-                color: AppConst.kLight,
-              ),
-            ),
-          )
+                    child: const Icon(
+                      Icons.logout,
+                      color: AppConst.kLight,
+                    ),
+                  ),
+                )
+              : const SizedBox()
         ],
       ),
       body: SingleChildScrollView(
@@ -95,7 +101,7 @@ class _UserPageState extends ConsumerState<UserPage>
           child: SafeArea(
             child: Column(
               children: [
-                userProfilePicture(context, truename),
+                userProfilePicture(context, truename, name),
                 const HeightSpacer(hieght: 20),
                 gridImageView(truename),
               ],
@@ -106,7 +112,8 @@ class _UserPageState extends ConsumerState<UserPage>
     );
   }
 
-  Widget userProfilePicture(BuildContext context, String username) {
+  Widget userProfilePicture(
+      BuildContext context, String username, String ownerName) {
     ref.watch(rebuildNotifierProvider);
     print('username: ${widget.userName}');
 
@@ -195,7 +202,7 @@ class _UserPageState extends ConsumerState<UserPage>
                   ],
                 ),
                 Builder(builder: (context) {
-                  return followbutton(data.uid!);
+                  return followbutton(data.uid!, ownerName);
                 }),
                 userInfo(data.bio ?? '', data.followers!, data.following!),
               ],
@@ -279,7 +286,7 @@ class _UserPageState extends ConsumerState<UserPage>
                         : const SizedBox(),
                   ],
                 ),
-                followbutton(''),
+                followbutton('', ownerName),
                 HeightSpacer(hieght: 10.h),
                 userInfo('', 0, 0),
               ],
@@ -305,7 +312,7 @@ class _UserPageState extends ConsumerState<UserPage>
     }
   }
 
-  Widget followbutton(String uid) {
+  Widget followbutton(String uid, String ownerName) {
     if (widget.role == 1) {
       ownerId = ref.watch(uidStateProvider);
       print('owener: $ownerId');
@@ -321,48 +328,54 @@ class _UserPageState extends ConsumerState<UserPage>
                 return ScaleTransition(
                   scale: tween.animate(CurvedAnimation(
                       parent: _controller, curve: Curves.elasticOut)),
-                  child: CustomButton(
-                    height: 35.h,
-                    onTap: () => onButtonTap(
-                        FollowingUser(
-                            uid: uid,
-                            username: widget.userName,
-                            createdAt: DateTime.now()),
-                        ownerId,
-                        FollowingUser(
-                            uid: ownerId,
-                            username: name,
-                            createdAt: DateTime.now()),
-                        uid),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isFollowing!
-                            ?
-                            // ? const Color.fromARGB(251, 159, 159, 159)
-                            const Color.fromARGB(168, 1, 217, 255)
-                            : const //const Color.fromARGB(168, 108, 199, 252),
-                            Color.fromARGB(168, 179, 179, 179),
-                        offset: const Offset(
-                          3.0,
-                          5.0,
-                        ),
-                        blurRadius: 10.0,
-                        spreadRadius: 1.5,
+                  child: Column(
+                    children: [
+                      CustomButton(
+                        backgroundColor: AppConst.kBkDark,
+                        height: 35.h,
+                        onTap: () async {
+                          onButtonTap(
+                              FollowingUser(
+                                  uid: uid,
+                                  username: widget.userName,
+                                  createdAt: DateTime.now()),
+                              ownerId,
+                              FollowingUser(
+                                  uid: ownerId,
+                                  username: name,
+                                  createdAt: DateTime.now()),
+                              uid);
+                          await StoreFirebase().createNotification(
+                              NotificationModel(
+                                  type: "follower",
+                                  createdAt: DateTime.now(),
+                                  uid: ownerId,
+                                  description: "$ownerName has followed you"),
+                              uid);
+                        },
+                        boxShadow: [
+                          inset_box_shadow.BoxShadow(
+                              blurRadius: isFollowing! ? 5 : 10,
+                              offset: isFollowing!
+                                  ? const Offset(-10, -10)
+                                  : const Offset(-5, -5),
+                              color: const Color.fromARGB(66, 171, 170, 170),
+                              inset: isFollowing!),
+                          inset_box_shadow.BoxShadow(
+                              blurRadius: isFollowing! ? 5 : 10,
+                              offset: isFollowing!
+                                  ? const Offset(10, 10)
+                                  : const Offset(5, 5),
+                              color: Colors.black,
+                              inset: isFollowing!),
+                        ],
+                        borderColor: Colors.transparent,
+                        width: 0.35.w,
+                        text: isFollowing! ? 'UnFollow' : 'Follow',
+                        style: appstyle(14.w, AppConst.kLight, FontWeight.w300,
+                            letterSpacing: 3),
                       ),
                     ],
-                    backgroundColor: isFollowing!
-                        ? const Color.fromARGB(252, 0, 0, 0)
-                        : const Color.fromARGB(255, 0, 166, 249),
-                    borderColor: AppConst.kBkDark,
-                    width: 0.35.w,
-                    text: isFollowing! ? 'UnFollow' : 'Follow',
-                    style: appstyle(
-                        14.w,
-                        isFollowing!
-                            ? const Color.fromARGB(255, 0, 132, 255)
-                            : AppConst.kLight,
-                        FontWeight.w300,
-                        letterSpacing: 3),
                   ),
                 );
               },

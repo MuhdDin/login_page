@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -65,6 +67,7 @@ class StoreFirebase {
         backgroundImage: bgImage,
         followers: followers,
         following: following,
+        unreadMessage: 0,
         uid: uid,
         bio: '',
         instagram: '',
@@ -87,7 +90,11 @@ class StoreFirebase {
 
   Future<void> storeUserDatabase(UserInfoOri userInfo) async {
     try {
-      await _firestore.collection('user').add(userInfo.toMap());
+      await _firestore
+          .collection('user')
+          .doc(userInfo.uid)
+          .set(userInfo.toMap());
+      // await _firestore.collection('user').add(userInfo.toMap());
       debugPrint("data stored succesfully");
     } catch (e) {
       debugPrint('error storing data $e');
@@ -189,6 +196,37 @@ class StoreFirebase {
     } catch (e) {
       debugPrint('Error fetching data: $e');
       return UserInfoOri(createdAt: DateTime.now(), email: '', userName: '');
+    }
+  }
+
+  Stream<UserInfoOri> streamUserDataByUid(String uid) {
+    try {
+      return _firestore
+          .collection('user')
+          .where('uid', isEqualTo: uid)
+          .snapshots()
+          .map((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          // Assuming you only expect one document to match the query
+          Map<String, dynamic>? data = snapshot.docs.first.data();
+
+          return UserInfoOri.fromMap(data);
+        }
+        // If no document matches the query or if there's an error, return a default UserInfoOri
+        return UserInfoOri(
+          createdAt: DateTime.now(),
+          email: '',
+          userName: '',
+        );
+      });
+    } catch (e) {
+      debugPrint('Error fetching data: $e');
+      // Return a stream with a default UserInfoOri in case of an error
+      return Stream.value(UserInfoOri(
+        createdAt: DateTime.now(),
+        email: '',
+        userName: '',
+      ));
     }
   }
 
@@ -366,6 +404,7 @@ class StoreFirebase {
     if (search == '') {
       return [];
     } else {
+      // print("string: $search");
       QuerySnapshot<Map<String, dynamic>> userSnapshot = await _firestore
           .collection('user')
           .where('userName', isGreaterThanOrEqualTo: search)
@@ -888,9 +927,6 @@ class StoreFirebase {
         read: false);
 
     try {
-      // Generate a unique chat ID based on user IDs
-
-      // Reference to the chat document for each user
       DocumentReference userDocRef = await _firestore
           .collection('user')
           .where('uid', isEqualTo: ownerId)
@@ -917,6 +953,7 @@ class StoreFirebase {
       CollectionReference friendChatRef = friendDocRef.collection('chats');
 
       // Add UID field to the chat document for each user
+      await friendDocRef.update({'unreadMessage': FieldValue.increment(1)});
       await userChatRef.doc(friendId).set({'uid': friendId});
       await friendChatRef.doc(ownerId).set({'uid': ownerId});
 
@@ -925,6 +962,7 @@ class StoreFirebase {
           userChatRef.doc(friendId).collection('messages');
       CollectionReference friendMessagesRef =
           friendChatRef.doc(ownerId).collection('messages');
+
       await userMessagesRef.add(sender.toMap());
       await friendMessagesRef.add(receiver.toMap());
     } catch (e) {
@@ -963,6 +1001,46 @@ class StoreFirebase {
     } catch (e) {
       return [];
     }
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamChat(
+      String ownerId, String friendId) {
+    print("owner: $ownerId");
+    print("friend: $friendId");
+    return _firestore
+        .collection('user')
+        .doc(ownerId)
+        .collection('chats')
+        .doc(friendId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+    //       .asyncMap((userSnapshot) async {
+    //     print(userSnapshot.size);
+    //     if (userSnapshot.docs.isNotEmpty) {
+    //       // DocumentReference chatDocument = userSnapshot.docs.first.reference;
+    //       // CollectionReference chatReference = chatDocument
+    //       //     .collection('chats')
+    //       //     .doc(friendId)
+    //       //     .collection('messages');
+
+    //       // QuerySnapshot messageSnapshot =
+    //       //     await chatReference.orderBy('createdAt', descending: true).get();
+
+    //       List<Chat> messages = userSnapshot.docs.map((documentSnapshot) {
+    //         Map<String, dynamic> messageData = documentSnapshot.data();
+    //         return Chat.fromMap(messageData);
+    //       }).toList();
+    //       print(messages);
+    //       return messages;
+    //     } else {
+    //       return <Chat>[];
+    //     }
+    //   });
+    // } catch (e) {
+    //   return Stream.value(
+    //       <Chat>[]); // Return a stream with an empty list in case of an error
+    // }
   }
 
   // Future<List<String>> chatHistory(String ownerId) async {
@@ -1026,26 +1104,15 @@ class StoreFirebase {
 
   Future<int> totalUnreadMessage(String ownerId) async {
     try {
-      int unreadMessageCount = 0;
-      QuerySnapshot userSnapshot = await _firestore
-          .collection('user')
-          .where('uid', isEqualTo: ownerId)
-          .get();
-      if (userSnapshot.docs.isNotEmpty) {
-        DocumentReference chatDocument = userSnapshot.docs.first.reference;
-        CollectionReference chatReference = chatDocument.collection('chats');
-        QuerySnapshot messageSnapshot = await chatReference.get();
+      DocumentSnapshot userSnapshot =
+          await _firestore.collection('user').doc(ownerId).get();
 
-        for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
-          CollectionReference messageReference =
-              documentSnapshot.reference.collection('messages');
-
-          QuerySnapshot unreadMessageSnapshot =
-              await messageReference.where('read', isEqualTo: false).get();
-          unreadMessageCount += unreadMessageSnapshot.size;
-        }
+      if (userSnapshot.exists) {
+        int unreadMessageCount = userSnapshot.get('unreadMessage') ?? 0;
+        return unreadMessageCount;
+      } else {
+        return 0;
       }
-      return unreadMessageCount;
     } catch (e) {
       debugPrint("error read message: $e");
       return 0;
@@ -1070,6 +1137,7 @@ class StoreFirebase {
         for (QueryDocumentSnapshot documentSnapshot in messageSnapshot.docs) {
           print("reference: ${documentSnapshot.reference}");
           DocumentReference docRef = documentSnapshot.reference;
+          await chatDocument.update({'unreadMessage': 0});
           await docRef.update({'read': true});
         }
       }

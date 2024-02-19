@@ -52,7 +52,7 @@ class _EditPageState extends ConsumerState<EditPage> {
         ),
       ),
       body: FutureBuilder(
-          future: StoreFirebase().fetchUserDatabyName(widget.userName),
+          future: StoreFirebase().fetchUserDatabyUid(widget.uidString),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               UserInfoOri? userInfo = snapshot.data;

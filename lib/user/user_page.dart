@@ -47,7 +47,6 @@ class _UserPageState extends ConsumerState<UserPage>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
         duration: const Duration(milliseconds: 900), vsync: this);
   }
@@ -112,7 +111,7 @@ class _UserPageState extends ConsumerState<UserPage>
     print('username: ${widget.userName}');
 
     return FutureBuilder(
-      future: StoreFirebase().fetchUserDatabyName(username),
+      future: StoreFirebase().fetchUserDatabyUid(widget.userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           UserInfoOri? data = snapshot.data;
@@ -198,7 +197,7 @@ class _UserPageState extends ConsumerState<UserPage>
                 Builder(builder: (context) {
                   return followbutton(data.uid!);
                 }),
-                userInfo(data.bio ?? ''),
+                userInfo(data.bio ?? '', data.followers!, data.following!),
               ],
             ),
           );
@@ -282,7 +281,7 @@ class _UserPageState extends ConsumerState<UserPage>
                 ),
                 followbutton(''),
                 HeightSpacer(hieght: 10.h),
-                userInfo(''),
+                userInfo('', 0, 0),
               ],
             ),
           );
@@ -388,9 +387,9 @@ class _UserPageState extends ConsumerState<UserPage>
     }
   }
 
-  Widget userInfo(String bio) {
+  Widget userInfo(String bio, int followers, int following) {
     List<String> follow = ['Followers', 'Following'];
-    List<int> followCount = [10000000, 1];
+    List<int> followCount = [followers, following];
 
     return Column(
       children: [

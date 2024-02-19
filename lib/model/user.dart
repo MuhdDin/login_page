@@ -15,23 +15,24 @@ class UserInfoOri {
   String? uid;
   int? followers;
   int? following;
+  int? unreadMessage;
 
-  UserInfoOri({
-    this.createdAt,
-    required this.email,
-    required this.userName,
-    this.bio,
-    this.instagram,
-    this.facebook,
-    this.twitter,
-    this.twitch,
-    this.youtube,
-    this.uid,
-    this.profilePicture,
-    this.followers,
-    this.following,
-    this.backgroundImage,
-  });
+  UserInfoOri(
+      {this.createdAt,
+      required this.email,
+      required this.userName,
+      this.bio,
+      this.instagram,
+      this.facebook,
+      this.twitter,
+      this.twitch,
+      this.youtube,
+      this.uid,
+      this.profilePicture,
+      this.followers,
+      this.following,
+      this.backgroundImage,
+      this.unreadMessage});
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> map = {
@@ -52,6 +53,10 @@ class UserInfoOri {
       map['profilePicture'] = profilePicture;
     }
 
+    if (unreadMessage != null) {
+      map['unreadMessage'] = unreadMessage;
+    }
+
     return map;
   }
 
@@ -65,6 +70,7 @@ class UserInfoOri {
         bio: map['bio'],
         backgroundImage: map['backgroundImage'],
         followers: map['followers'],
-        following: map['following']);
+        following: map['following'],
+        unreadMessage: map['unreadMessage']);
   }
 }

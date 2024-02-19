@@ -116,7 +116,8 @@ class BottomNav extends ConsumerWidget {
       stateManagement: true, // Default is true.
       hideNavigationBarWhenKeyboardShows: true,
       decoration: NavBarDecoration(
-        borderRadius: BorderRadius.circular(10.0),
+        borderRadius: BorderRadius.horizontal(
+            left: Radius.circular(10.w), right: Radius.circular(10.w)),
         colorBehindNavBar: Colors.white,
       ),
       popAllScreensOnTapOfSelectedTab: true,

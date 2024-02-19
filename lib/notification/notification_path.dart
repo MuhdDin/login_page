@@ -84,52 +84,69 @@ class NotificationPage extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: notifications.length,
                 itemBuilder: (context, index) {
-                  return FutureBuilder(
-                      future: StoreFirebase()
-                          .fetchUserDatabyUid(notifications[index].uid),
-                      builder: (context, userSnapshot) {
-                        if (userSnapshot.connectionState ==
-                            ConnectionState.done) {
-                          UserInfoOri userInfo = userSnapshot.data!;
-                          return FutureBuilder(
-                              future: StoreFirebase().fetchPostDataById(
-                                  notifications[index].postId),
-                              builder: (context, postSnapshot) {
-                                if (postSnapshot.connectionState ==
-                                    ConnectionState.done) {
-                                  ImagePost postData = postSnapshot.data!;
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundImage: NetworkImage(
-                                          userInfo.profilePicture!),
+                  if (notifications[index].type == "follower") {
+                    return FutureBuilder(
+                        future: StoreFirebase()
+                            .fetchUserDatabyUid(notifications[index].uid),
+                        builder: (context, userSnapshot) {
+                          if (userSnapshot.connectionState ==
+                              ConnectionState.done) {
+                            UserInfoOri userInfo = userSnapshot.data!;
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage:
+                                    NetworkImage(userInfo.profilePicture!),
+                              ),
+                              title: Text(
+                                notifications[index].description,
+                                style: appstyle(
+                                    14.h, AppConst.kLight, FontWeight.w400),
+                              ),
+                            );
+                          } else {
+                            return Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                ),
+                                trailing: Container(
+                                  width: 50.w,
+                                  height: 55.h,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(AppConst.kRadius),
                                     ),
-                                    trailing: Container(
-                                      width: 50.w,
-                                      height: 55.h,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(AppConst.kRadius),
-                                        ),
-                                        image: DecorationImage(
-                                          fit: BoxFit.cover,
-                                          image:
-                                              NetworkImage(postData.imageUrl),
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text(
-                                      notifications[index].description,
-                                      style: appstyle(14.h, AppConst.kLight,
-                                          FontWeight.w400),
-                                    ),
-                                  );
-                                } else {
-                                  return Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: ListTile(
-                                      leading: const CircleAvatar(
-                                        backgroundColor: Colors.white,
+                                  ),
+                                ),
+                                title: Container(
+                                  height: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          }
+                        });
+                  } else {
+                    return FutureBuilder(
+                        future: StoreFirebase()
+                            .fetchUserDatabyUid(notifications[index].uid),
+                        builder: (context, userSnapshot) {
+                          if (userSnapshot.connectionState ==
+                              ConnectionState.done) {
+                            UserInfoOri userInfo = userSnapshot.data!;
+                            return FutureBuilder(
+                                future: StoreFirebase().fetchPostDataById(
+                                    notifications[index].postId!),
+                                builder: (context, postSnapshot) {
+                                  if (postSnapshot.connectionState ==
+                                      ConnectionState.done) {
+                                    ImagePost postData = postSnapshot.data!;
+                                    return ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundImage: NetworkImage(
+                                            userInfo.profilePicture!),
                                       ),
                                       trailing: Container(
                                         width: 50.w,
@@ -138,41 +155,70 @@ class NotificationPage extends ConsumerWidget {
                                           borderRadius: BorderRadius.all(
                                             Radius.circular(AppConst.kRadius),
                                           ),
+                                          image: DecorationImage(
+                                            fit: BoxFit.cover,
+                                            image:
+                                                NetworkImage(postData.imageUrl),
+                                          ),
                                         ),
                                       ),
-                                      title: Container(
-                                        height: 10,
-                                        color: Colors.white,
+                                      title: Text(
+                                        notifications[index].description,
+                                        style: appstyle(14.h, AppConst.kLight,
+                                            FontWeight.w400),
                                       ),
+                                    );
+                                  } else {
+                                    return Shimmer.fromColors(
+                                      baseColor: Colors.grey[300]!,
+                                      highlightColor: Colors.grey[100]!,
+                                      child: ListTile(
+                                        leading: const CircleAvatar(
+                                          backgroundColor: Colors.white,
+                                        ),
+                                        trailing: Container(
+                                          width: 50.w,
+                                          height: 55.h,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(AppConst.kRadius),
+                                            ),
+                                          ),
+                                        ),
+                                        title: Container(
+                                          height: 10,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                });
+                          } else {
+                            return Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: ListTile(
+                                leading: const CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                ),
+                                trailing: Container(
+                                  width: 50.w,
+                                  height: 55.h,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(AppConst.kRadius),
                                     ),
-                                  );
-                                }
-                              });
-                        } else {
-                          return Shimmer.fromColors(
-                            baseColor: Colors.grey[300]!,
-                            highlightColor: Colors.grey[100]!,
-                            child: ListTile(
-                              leading: const CircleAvatar(
-                                backgroundColor: Colors.white,
-                              ),
-                              trailing: Container(
-                                width: 50.w,
-                                height: 55.h,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(AppConst.kRadius),
                                   ),
                                 ),
+                                title: Container(
+                                  height: 10,
+                                  color: Colors.white,
+                                ),
                               ),
-                              title: Container(
-                                height: 10,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        }
-                      });
+                            );
+                          }
+                        });
+                  }
                 },
               );
             }

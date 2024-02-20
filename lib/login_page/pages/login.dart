@@ -26,7 +26,7 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-  VideoPlayerController? videoController;
+  late VideoPlayerController? videoController;
   String title = "MY PROJECT";
   bool obscureText = false;
   bool isAnimationComplete = false;
@@ -35,22 +35,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   void initState() {
-    videoController =
-        VideoPlayerController.asset('assets/image/background_video.mp4')
-          ..initialize().then((_) {
-            videoController!.play();
-            videoController!.setLooping(true);
-            setState(
-              () {},
-            );
-          });
+    videoController = VideoPlayerController.asset('assets/image/test_video.mp4')
+      ..initialize().then((_) {
+        videoController!.play();
+        videoController!.setLooping(true);
+        setState(
+          () {},
+        );
+      }).catchError((e) {
+        print("unhandled error: $e");
+      });
     super.initState();
+  }
+
+  Future<void> _disposeController() async {
+    if (videoController != null) {
+      await videoController!.dispose();
+    }
   }
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    _disposeController();
     super.dispose();
   }
 

@@ -12,6 +12,7 @@ import 'package:login_page/model/follow.dart';
 import 'package:login_page/model/notification.dart';
 import 'package:login_page/model/posts.dart';
 import 'package:login_page/model/user.dart';
+import 'package:login_page/provider/addImage_provider.dart';
 import 'package:login_page/provider/click_provider.dart';
 import 'package:login_page/provider/rebuild_notifier.dart';
 import 'package:login_page/provider/uid_provider.dart';
@@ -97,17 +98,19 @@ class _UserPageState extends ConsumerState<UserPage>
         ],
       ),
       body: SingleChildScrollView(
-        child: Center(
-          child: SafeArea(
-            child: Column(
-              children: [
-                userProfilePicture(context, truename, name),
-                const HeightSpacer(hieght: 20),
-                gridImageView(truename),
-              ],
+        child: Consumer(builder: (context, ref, child) {
+          return Center(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  userProfilePicture(context, truename, name),
+                  const HeightSpacer(hieght: 20),
+                  gridImageView(truename),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
@@ -115,8 +118,6 @@ class _UserPageState extends ConsumerState<UserPage>
   Widget userProfilePicture(
       BuildContext context, String username, String ownerName) {
     ref.watch(rebuildNotifierProvider);
-    print('username: ${widget.userName}');
-
     return FutureBuilder(
       future: StoreFirebase().fetchUserDatabyUid(widget.userId),
       builder: (context, snapshot) {
@@ -436,6 +437,7 @@ class _UserPageState extends ConsumerState<UserPage>
   }
 
   Widget gridImageView(String username) {
+    ref.watch(addImageNotifierProvider);
     return SizedBox(
       height: AppConst.kHeight * 0.6,
       child: FutureBuilder(

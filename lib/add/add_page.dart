@@ -11,6 +11,7 @@ import 'package:login_page/image_picker/image_picker.dart';
 import 'package:login_page/location/map_location.dart';
 import 'package:login_page/model/posts.dart';
 import 'package:login_page/model/user.dart';
+import 'package:login_page/provider/addImage_provider.dart';
 import 'package:login_page/provider/click_provider.dart';
 import 'package:login_page/provider/select_image_provider.dart';
 import 'package:login_page/widget/appstyle.dart';
@@ -110,8 +111,12 @@ class _AddPageState extends ConsumerState<AddPage> {
                         child: GestureDetector(
                           onTap: () async {
                             print("post");
+
                             await postImageToFirebase(
                                 data!.uid!, data.userName);
+                            ref
+                                .read(addImageNotifierProvider.notifier)
+                                .triggerRebuild();
                             if (mounted) {
                               controller.jumpToTab(0);
                             }

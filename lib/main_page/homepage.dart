@@ -9,6 +9,7 @@ import 'package:login_page/add/add_page.dart';
 import 'package:login_page/constant/constants.dart';
 import 'package:login_page/firebase/storage.dart';
 import 'package:login_page/main_page/chat/chat_page.dart';
+import 'package:login_page/main_page/story.dart';
 import 'package:login_page/model/user.dart';
 import 'package:login_page/provider/read_message_provider.dart';
 import 'package:login_page/provider/rebuild_notifier.dart';
@@ -130,12 +131,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   );
                                 } else {
                                   // If no data is available
-                                  return Text('No data available');
+                                  return const Text('No data available');
                                 }
                               } else if (snapshot.connectionState ==
                                   ConnectionState.done) {
                                 // If the stream has emitted all its data
-                                return Text('Stream completed');
+                                return const Text('Stream completed');
                               } else {
                                 // Handle other connection states
                                 return Text(
@@ -313,7 +314,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Stack(
               children: [
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: ((context) => const StoryPost()),
+                      ),
+                    );
+                  },
                   child: CircleAvatar(
                     radius: 45.w,
                     backgroundColor: AppConst.kGreyLight,

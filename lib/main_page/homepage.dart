@@ -19,6 +19,7 @@ import 'package:login_page/user/user_page.dart';
 import 'package:login_page/widget/appstyle.dart';
 import 'package:login_page/widget/height_spacer.dart';
 import 'package:login_page/widget/show_post.dart';
+import 'package:login_page/widget/widthspacer.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -151,23 +152,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
               body: SafeArea(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20.0.w, 10.h, 20.w, 0),
-                        child: storyPost(username),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(20.0.w, 10.h, 0, 0),
+                      child: Row(
+                        children: [
+                          storyPost(username),
+                          WidthSpacer(width: 10.w),
+                          SingleChildScrollView(
+                              child: Container(
+                                  height: 100.h,
+                                  width: AppConst.kWidth * 0.69,
+                                  child: friendsStory())),
+                        ],
                       ),
-                      HeightSpacer(hieght: 20.h),
-                      ShowPosts(
+                    ),
+                    HeightSpacer(hieght: 5.h),
+                    SingleChildScrollView(
+                      child: ShowPosts(
                         username: username,
-                        heightMultiplier: 0.65.h,
+                        heightMultiplier: 0.6.h,
                         page: 'homepage',
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               // bottomNavigationBar:
@@ -252,56 +263,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // Widget userProfile(BuildContext context, String username) {
-  //   return FutureBuilder(
-  //     future: StoreFirebase().fetchUserDatabyName(username),
-  //     builder: (context, snapshot) {
-  //       UserInfoOri? data = snapshot.data;
-  //       if (snapshot.connectionState == ConnectionState.done) {
-  //         return Padding(
-  //           padding: EdgeInsets.only(left: 20.0.w),
-  //           child: GestureDetector(
-  //             onTap: () {
-  //               Navigator.push(
-  //                   context,
-  //                   MaterialPageRoute(
-  //                       builder: (context) => UserPage(
-  //                             userName: data.userName,
-  //                             role
-  //                           )));
-  //             },
-  //             child: CircleAvatar(
-  //               radius: 20.w,
-  //               backgroundImage: NetworkImage(data!.profilePicture!),
-  //             ),
-  //           ),
-  //         );
-  //       } else {
-  //         return Padding(
-  //           padding: EdgeInsets.only(left: 20.0.w),
-  //           child: GestureDetector(
-  //             onTap: () {
-  //               Navigator.push(
-  //                   context,
-  //                   MaterialPageRoute(
-  //                       builder: (context) => UserPage(
-  //                             userName: data!.userName,
-  //                           )));
-  //             },
-  //             child: Shimmer.fromColors(
-  //               baseColor: Colors.grey[300]!,
-  //               highlightColor: Colors.grey[100]!,
-  //               child: CircleAvatar(
-  //                 radius: 20.w,
-  //               ),
-  //             ),
-  //           ),
-  //         );
-  //       }
-  //     },
-  //   );
-  // }
-
   Widget storyPost(String username) {
     return FutureBuilder(
       future: StoreFirebase().fetchUserDatabyName(username),
@@ -371,6 +332,60 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         }
       },
+    );
+  }
+
+  Widget friendsStory() {
+    return FutureBuilder(
+      future: StoreFirebase().fetchUserData(),
+      builder: ((context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          List<UserInfoOri> data = snapshot.data!;
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            shrinkWrap: true,
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              return SizedBox(
+                width: 80.w,
+                height: 80.h,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: ((context) => const StoryPost()),
+                      ),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 45.w,
+                    backgroundColor: AppConst.kGreyLight,
+                    child: CircleAvatar(
+                        radius: 35.w,
+                        backgroundImage:
+                            NetworkImage(data[index].profilePicture!)),
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (BuildContext context, int index) =>
+                WidthSpacer(width: 10.w),
+          );
+        } else {
+          return GestureDetector(
+            onTap: () async {},
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: CircleAvatar(
+                radius: 45.w,
+                backgroundColor: AppConst.kGreyLight,
+              ),
+            ),
+          );
+        }
+      }),
     );
   }
 }

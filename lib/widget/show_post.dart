@@ -65,7 +65,7 @@ class _MyWidgetState extends ConsumerState<ShowPosts> {
       child: SizedBox(
         height: AppConst.kHeight * widget.heightMultiplier,
         child: FutureBuilder(
-          future: (widget.page == 'homepage')
+          future: (widget.page == 'homepage' || widget.page == 'searchPage')
               ? StoreFirebase().fetchPostData()
               : StoreFirebase().fetchPostDataByUsername(username),
           builder: (context, snapshot) {

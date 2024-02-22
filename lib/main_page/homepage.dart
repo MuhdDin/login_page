@@ -68,7 +68,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             String username = snapshot.data!;
-            print('username: $username');
             return Scaffold(
               appBar: AppBar(
                 backgroundColor: Colors.transparent,
@@ -156,18 +155,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(20.0.w, 10.h, 0, 0),
-                      child: Row(
-                        children: [
-                          storyPost(username),
-                          WidthSpacer(width: 10.w),
-                          SingleChildScrollView(
-                              child: Container(
-                                  height: 100.h,
-                                  width: AppConst.kWidth * 0.69,
-                                  child: friendsStory())),
-                        ],
+                    // storyPost(username),
+                    // WidthSpacer(width: 10.w),
+                    SingleChildScrollView(
+                      child: SizedBox(
+                        height: 100.h,
+                        width: AppConst.kWidth,
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: friendsStory(username),
+                        ),
                       ),
                     ),
                     HeightSpacer(hieght: 5.h),
@@ -176,6 +173,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         username: username,
                         heightMultiplier: 0.6.h,
                         page: 'homepage',
+                        shuffle: true,
                       ),
                     ),
                   ],
@@ -335,17 +333,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget friendsStory() {
+  Widget friendsStory(String username) {
     return FutureBuilder(
       future: StoreFirebase().fetchUserData(),
       builder: ((context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           List<UserInfoOri> data = snapshot.data!;
+          data.insert(0, UserInfoOri(email: "", userName: username));
           return ListView.separated(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
             itemCount: data.length,
             itemBuilder: (context, index) {
+              if (index == 0) {
+                return storyPost(username);
+              } else {}
               return SizedBox(
                 width: 80.w,
                 height: 80.h,

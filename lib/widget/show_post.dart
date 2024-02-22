@@ -30,12 +30,14 @@ class ShowPosts extends ConsumerStatefulWidget {
       required this.username,
       required this.heightMultiplier,
       this.imageIndex,
+      this.shuffle,
       required this.page});
 
   final String username;
   final double heightMultiplier;
   final int? imageIndex;
   final String page;
+  final bool? shuffle;
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _MyWidgetState();
 }
@@ -66,7 +68,7 @@ class _MyWidgetState extends ConsumerState<ShowPosts> {
         height: AppConst.kHeight * widget.heightMultiplier,
         child: FutureBuilder(
           future: (widget.page == 'homepage' || widget.page == 'searchPage')
-              ? StoreFirebase().fetchPostData()
+              ? StoreFirebase().fetchPostData(widget.shuffle)
               : StoreFirebase().fetchPostDataByUsername(username),
           builder: (context, snapshot) {
             switch (snapshot.connectionState) {

@@ -488,8 +488,11 @@ class _UserPageState extends ConsumerState<UserPage>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                UserPost(index: index, username: username),
+                            builder: (context) => UserPost(
+                              index: index,
+                              username: username,
+                              page: 'userpage',
+                            ),
                           ),
                         );
                       },

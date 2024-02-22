@@ -230,7 +230,7 @@ class StoreFirebase {
     }
   }
 
-  Future<List<ImagePost>> fetchPostData() async {
+  Future<List<ImagePost>> fetchPostData(bool? shuffle) async {
     try {
       QuerySnapshot postsSnapshot = await _firestore.collection('post').get();
 
@@ -244,8 +244,9 @@ class StoreFirebase {
           imagePosts.add(imagePost);
         }
       }
-      imagePosts.shuffle();
-      debugPrint('ImagePosts: $imagePosts');
+      if (shuffle!) {
+        imagePosts.shuffle();
+      }
 
       return imagePosts;
     } catch (e) {

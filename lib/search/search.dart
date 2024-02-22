@@ -8,8 +8,8 @@ import 'package:login_page/model/posts.dart';
 import 'package:login_page/model/user.dart';
 import 'package:login_page/provider/search_provider.dart';
 import 'package:login_page/provider/username_provider.dart';
-import 'package:login_page/search/search_post.dart';
 import 'package:login_page/user/user_page.dart';
+import 'package:login_page/user/user_post.dart';
 import 'package:login_page/widget/appstyle.dart';
 import 'package:login_page/widget/custom_text.dart';
 import 'package:shimmer/shimmer.dart';
@@ -75,7 +75,7 @@ class _SearchUserState extends ConsumerState<SearchUser> {
         child: SizedBox(
           height: AppConst.kHeight * 0.77,
           child: FutureBuilder(
-            future: StoreFirebase().fetchPostData(),
+            future: StoreFirebase().fetchPostData(false),
             builder: (context, snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.none:
@@ -124,8 +124,11 @@ class _SearchUserState extends ConsumerState<SearchUser> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) =>
-                                      SearchPost(username: ownerName)),
+                                  builder: (context) => UserPost(
+                                        username: ownerName,
+                                        index: index,
+                                        page: "searchPage",
+                                      )),
                             );
                           },
                           child: SizedBox(

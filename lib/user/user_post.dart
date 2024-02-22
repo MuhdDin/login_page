@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:login_page/widget/show_post.dart';
 
 class UserPost extends StatefulWidget {
-  const UserPost({super.key, required this.index, required this.username});
+  const UserPost(
+      {super.key,
+      required this.index,
+      required this.username,
+      required this.page});
   final int index;
   final String username;
+  final String page;
 
   @override
   State<UserPost> createState() => _UserPostState();
@@ -23,7 +28,8 @@ class _UserPostState extends State<UserPost> {
           username: widget.username,
           heightMultiplier: 0.9,
           imageIndex: widget.index,
-          page: 'userpage',
+          page: widget.page,
+          shuffle: false,
         ),
       ),
     );

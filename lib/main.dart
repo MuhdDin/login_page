@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:login_page/constant/constants.dart';
-import 'package:login_page/firebase/check_login.dart';
 import 'package:login_page/firebase_options.dart';
+import 'package:login_page/splash/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,11 +31,11 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           scaffoldBackgroundColor: AppConst.kBkDark,
-          colorScheme:
-              ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 25, 0, 255)),
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 25, 0, 255)),
           useMaterial3: true,
         ),
-        home: const AuthWrapper(),
+        home: const SplashScreen(),
       ),
     );
   }

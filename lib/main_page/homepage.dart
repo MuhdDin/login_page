@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:login_page/add/add_page.dart';
+import 'package:login_page/add/add_story.dart';
 import 'package:login_page/constant/constants.dart';
 import 'package:login_page/firebase/storage.dart';
 import 'package:login_page/main_page/chat/chat_page.dart';
@@ -168,12 +169,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                     HeightSpacer(hieght: 5.h),
-                    SingleChildScrollView(
-                      child: ShowPosts(
-                        username: username,
-                        heightMultiplier: 0.6.h,
-                        page: 'homepage',
-                        shuffle: true,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: ShowPosts(
+                          username: username,
+                          heightMultiplier: 0.7,
+                          page: 'homepage',
+                          shuffle: true,
+                        ),
                       ),
                     ),
                   ],
@@ -277,7 +280,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: ((context) => const StoryPost()),
+                        builder: ((context) => const AddStory()),
                       ),
                     );
                   },
@@ -334,60 +337,64 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget friendsStory(String username) {
-    return FutureBuilder(
-      future: StoreFirebase().fetchUserData(),
-      builder: ((context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          List<UserInfoOri> data = snapshot.data!;
-          data.insert(0, UserInfoOri(email: "", userName: username));
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            shrinkWrap: true,
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return storyPost(username);
-              } else {}
-              return SizedBox(
-                width: 80.w,
-                height: 80.h,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: ((context) => const StoryPost()),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.0.w),
+      child: FutureBuilder(
+        future: StoreFirebase().fetchUserData(),
+        builder: ((context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            List<UserInfoOri> data = snapshot.data!;
+            data.insert(0, UserInfoOri(email: "", userName: username));
+            return ListView.separated(
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return storyPost(username);
+                } else {
+                  return SizedBox(
+                    width: 80.w,
+                    height: 80.h,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: ((context) => const StoryPost()),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 45.w,
+                        backgroundColor: AppConst.kGreyLight,
+                        child: CircleAvatar(
+                            radius: 35.w,
+                            backgroundImage:
+                                NetworkImage(data[index].profilePicture!)),
                       ),
-                    );
-                  },
-                  child: CircleAvatar(
-                    radius: 45.w,
-                    backgroundColor: AppConst.kGreyLight,
-                    child: CircleAvatar(
-                        radius: 35.w,
-                        backgroundImage:
-                            NetworkImage(data[index].profilePicture!)),
-                  ),
+                    ),
+                  );
+                }
+              },
+              separatorBuilder: (BuildContext context, int index) =>
+                  WidthSpacer(width: 10.w),
+            );
+          } else {
+            return GestureDetector(
+              onTap: () async {},
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: CircleAvatar(
+                  radius: 45.w,
+                  backgroundColor: AppConst.kGreyLight,
                 ),
-              );
-            },
-            separatorBuilder: (BuildContext context, int index) =>
-                WidthSpacer(width: 10.w),
-          );
-        } else {
-          return GestureDetector(
-            onTap: () async {},
-            child: Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
-              child: CircleAvatar(
-                radius: 45.w,
-                backgroundColor: AppConst.kGreyLight,
               ),
-            ),
-          );
-        }
-      }),
+            );
+          }
+        }),
+      ),
     );
   }
 }
